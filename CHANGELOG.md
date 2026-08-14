@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2 - 2026-08-14
+
+- Fixed compendium folders immediately reopening because both Foundry and the module handled the same click.
+- Added disclosure chevrons and open/closed folder icons.
+- Removed horizontal indentation from nested folders and documents while retaining the true collapsible hierarchy.
+- Changed compendium thumbnails to uncropped `contain` rendering.
+
 ## 1.1.1 - 2026-08-14
 
 - Fixed system-theme heading rules causing large blank space before compendium folder names.
