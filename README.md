@@ -6,7 +6,8 @@ Compendium Sidebar adds a compact **World / Comp.** switch to Foundry VTT docume
 
 - Supports Actor, Item, Journal, Roll Table, Macro, Playlist, Scene, and Cards directories.
 - Uses the compendium index instead of loading every document, minimizing memory use and initial load time.
-- Preserves folders, search, click-to-open, and drag-to-import behavior.
+- Preserves folders, search, click-to-open, drag-to-import, folder creation, and drag-to-folder organization.
+- Opens world-pack documents directly for normal GM editing; read-only package documents use persistent hidden working copies.
 - Stores configuration per world and the toggle state per client.
 - Compatible with Foundry VTT v11–v13.
 
@@ -24,6 +25,8 @@ Enable the module, then open **Game Settings → Configure Settings → Module S
 - A configured sidebar does not load its pack until the user selects **Comp.**.
 - The switch remembers its state independently for each sidebar and browser.
 - Changing or removing a configured pack returns affected users to the World view on their next render.
+- A GM opening a document from a locked world pack automatically unlocks that pack so the sheet can save normally.
+- System and module packs cannot be overwritten safely. Their documents open as editable world working copies, kept out of the normal World list by the module.
 
 ## License
 

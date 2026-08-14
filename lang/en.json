@@ -11,5 +11,7 @@
   "CS.Loading": "Loading compendium…",
   "CS.Empty": "This compendium is empty.",
   "CS.LoadFailed": "The compendium could not be loaded.",
-  "CS.PackUnavailable": "That compendium is no longer available. Returning to the World view."
+  "CS.PackUnavailable": "That compendium is no longer available. Returning to the World view.",
+  "CS.ReadOnlyPack": "That pack is read-only. Its folders and source documents cannot be changed.",
+  "CS.WorkingCopyCreated": "Opened an editable working copy. The read-only source pack is unchanged."
 }

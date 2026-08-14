@@ -88,6 +88,7 @@ async function onRenderDirectory(app, html) {
   if (!packId) return;
 
   const root = rootElement(html);
+  hideWorkingCopies(root);
   if (!root || root.querySelector(".cs-mode-switch")) return;
   installSwitch(root, app, tab, packId);
   if (game.settings.get(MODULE_ID, modeKey(tab))) await showCompendium(root, tab, packId);
@@ -159,7 +160,7 @@ async function showCompendium(root, tab, packId) {
   try {
     const index = Array.from(await getPackIndex(pack));
     list.innerHTML = "";
-    list.append(buildTree(pack, index));
+    list.append(buildTree(pack, index, tab));
     bindCompendiumInteractions(root, pack);
     updateHeader(root, pack, index.length);
   } catch (error) {
@@ -168,9 +169,10 @@ async function showCompendium(root, tab, packId) {
   }
 }
 
-function buildTree(pack, entries) {
+function buildTree(pack, entries, tab) {
   const fragment = document.createDocumentFragment();
-  const folders = Array.from(pack.folders ?? []);
+  const folderCollection = pack.folders;
+  const folders = Array.from(folderCollection?.contents ?? folderCollection ?? []);
   const byParent = new Map();
   const entriesByFolder = new Map();
   for (const folder of folders) {
@@ -193,10 +195,10 @@ function buildTree(pack, entries) {
       li.innerHTML = `<header class="folder-header flexrow"><i class="fas fa-folder"></i><h3>${escapeHtml(folder.name)}</h3></header><ol class="subdirectory"></ol>`;
       const child = li.querySelector(".subdirectory");
       appendLevel(child, folder.id);
-      appendEntries(child, entriesByFolder.get(folder.id) ?? [], pack, sort);
+      appendEntries(child, entriesByFolder.get(folder.id) ?? [], pack, tab, sort);
       target.append(li);
     }
-    if (parentId === "root") appendEntries(target, entriesByFolder.get("root") ?? [], pack, sort);
+    if (parentId === "root") appendEntries(target, entriesByFolder.get("root") ?? [], pack, tab, sort);
   };
   appendLevel(fragment, "root");
   if (!fragment.childNodes.length) {
@@ -206,15 +208,18 @@ function buildTree(pack, entries) {
   return fragment;
 }
 
-function appendEntries(target, entries, pack, sort) {
+function appendEntries(target, entries, pack, tab, sort) {
   for (const entry of entries.sort(sort)) {
+    const workingCopy = findWorkingCopy(tab, pack, entry._id);
     const li = document.createElement("li");
     li.className = "directory-item document flexrow cs-pack-entry";
     li.dataset.entryId = entry._id;
     li.dataset.uuid = `Compendium.${pack.collection}.${entry._id}`;
+    if (workingCopy) li.dataset.workingId = workingCopy.id;
     li.draggable = true;
-    const image = entry.img ?? entry.thumb;
-    li.innerHTML = `${image ? `<img class="thumbnail" src="${escapeAttribute(image)}" alt="">` : `<i class="fas fa-file"></i>`}<a class="entry-name">${escapeHtml(entry.name)}</a>`;
+    const image = workingCopy?.img ?? entry.img ?? entry.thumb;
+    const name = workingCopy?.name ?? entry.name;
+    li.innerHTML = `${image ? `<img class="thumbnail" src="${escapeAttribute(image)}" alt="">` : `<i class="fas fa-file"></i>`}<a class="entry-name">${escapeHtml(name)}</a>${workingCopy ? '<i class="fas fa-pen cs-working-copy" title="Editable working copy"></i>' : ""}`;
     target.append(li);
   }
 }
@@ -222,13 +227,127 @@ function appendEntries(target, entries, pack, sort) {
 function bindCompendiumInteractions(root, pack) {
   root.querySelectorAll(".folder-header").forEach(header => header.addEventListener("click", () => header.parentElement.classList.toggle("collapsed")));
   root.querySelectorAll(".cs-pack-entry").forEach(entry => {
-    entry.addEventListener("click", async () => (await pack.getDocument(entry.dataset.entryId))?.sheet?.render(true));
+    entry.querySelector("img")?.addEventListener("error", event => {
+      const icon = document.createElement("i");
+      icon.className = "fas fa-file cs-fallback-icon";
+      event.currentTarget.replaceWith(icon);
+    }, { once: true });
+    entry.addEventListener("click", async () => openEditableDocument(pack, entry));
     entry.addEventListener("dragstart", event => {
       event.dataTransfer.setData("text/plain", JSON.stringify({ type: pack.documentName, uuid: entry.dataset.uuid }));
     });
   });
+  root.querySelectorAll("li.folder").forEach(folder => {
+    folder.addEventListener("dragover", event => event.preventDefault());
+    folder.addEventListener("drop", async event => moveEntryToFolder(event, pack, folder.dataset.folderId));
+  });
+  root.addEventListener("click", event => {
+    const createFolder = event.target.closest('[data-action="createFolder"], .create-folder');
+    const createEntry = event.target.closest('[data-action="createEntry"], .create-document');
+    if (!createFolder && !createEntry) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (createFolder) createCompendiumFolder(pack);
+    else createCompendiumDocument(pack);
+  }, true);
   const search = root.querySelector('input[type="search"], input[name="search"]');
   search?.addEventListener("input", event => filterEntries(root, event.currentTarget.value), { capture: true });
+}
+
+async function createCompendiumDocument(pack) {
+  if (!await ensureWritablePack(pack)) return;
+  return pack.documentClass.createDialog({}, { pack: pack.collection });
+}
+
+async function createCompendiumFolder(pack) {
+  if (!await ensureWritablePack(pack)) return;
+  await Folder.createDialog({ type: pack.documentName, folder: null }, { pack: pack.collection });
+  indexCache.delete(pack.collection);
+  rerenderDirectory(Object.keys(DIRECTORIES).find(tab => DIRECTORIES[tab].documentName === pack.documentName));
+}
+
+async function moveEntryToFolder(event, pack, folderId) {
+  event.preventDefault();
+  event.stopPropagation();
+  let data;
+  try { data = JSON.parse(event.dataTransfer.getData("text/plain")); } catch (_error) { return; }
+  if (!data?.uuid?.startsWith(`Compendium.${pack.collection}.`)) return;
+  if (!await ensureWritablePack(pack)) return;
+  const id = data.uuid.split(".").pop();
+  const document = await pack.getDocument(id);
+  await document.update({ folder: folderId });
+  indexCache.delete(pack.collection);
+  ui.sidebar?.render?.(true);
+}
+
+async function ensureWritablePack(pack) {
+  if (!pack.locked) return true;
+  const isWorldPack = pack.metadata?.packageType === "world" || pack.collection.startsWith("world.");
+  if (game.user.isGM && isWorldPack) {
+    await pack.configure({ locked: false });
+    return true;
+  }
+  ui.notifications.warn(game.i18n.localize("CS.ReadOnlyPack"));
+  return false;
+}
+
+async function openEditableDocument(pack, entry) {
+  let document = entry.dataset.workingId ? getWorldCollection(pack.documentName)?.get(entry.dataset.workingId) : null;
+  const isWorldPack = pack.metadata?.packageType === "world" || pack.collection.startsWith("world.");
+  if (!document && game.user.isGM && isWorldPack) {
+    await ensureWritablePack(pack);
+    document = await pack.getDocument(entry.dataset.entryId);
+  }
+  if (!document && game.user.isGM) document = await getOrCreateWorkingCopy(pack, entry.dataset.entryId);
+  if (!document) document = await pack.getDocument(entry.dataset.entryId);
+  document?.sheet?.render(true);
+}
+
+function getWorldCollection(documentName) {
+  return Object.values(DIRECTORIES).find(config => config.documentName === documentName)
+    ? game.collections?.get(documentName)
+    : null;
+}
+
+function findWorkingCopy(tab, pack, entryId) {
+  const collection = getWorldCollection(DIRECTORIES[tab].documentName);
+  const sourceUuid = `Compendium.${pack.collection}.${entryId}`;
+  return collection?.find(document => document.getFlag(MODULE_ID, "sourceUuid") === sourceUuid);
+}
+
+async function getOrCreateWorkingCopy(pack, entryId) {
+  const sourceUuid = `Compendium.${pack.collection}.${entryId}`;
+  const collection = getWorldCollection(pack.documentName);
+  const existing = collection?.find(document => document.getFlag(MODULE_ID, "sourceUuid") === sourceUuid);
+  if (existing) return existing;
+  const source = await pack.getDocument(entryId);
+  const folder = await getWorkingFolder(pack.documentName);
+  const data = source.toObject();
+  delete data._id;
+  data.folder = folder.id;
+  data.flags = foundry.utils.mergeObject(data.flags ?? {}, { [MODULE_ID]: { sourceUuid } });
+  const created = await CONFIG[pack.documentName].documentClass.create(data, { renderSheet: false });
+  ui.notifications.info(game.i18n.localize("CS.WorkingCopyCreated"));
+  return created;
+}
+
+async function getWorkingFolder(documentName) {
+  let folder = game.folders.find(candidate => candidate.type === documentName && candidate.getFlag(MODULE_ID, "workingCopies"));
+  if (folder) return folder;
+  return Folder.create({
+    name: "Compendium Sidebar Working Copies",
+    type: documentName,
+    sorting: "a",
+    flags: { [MODULE_ID]: { workingCopies: true } }
+  }, { renderSheet: false });
+}
+
+function hideWorkingCopies(root) {
+  if (!root) return;
+  for (const folder of game.folders ?? []) {
+    if (!folder.getFlag(MODULE_ID, "workingCopies")) continue;
+    root.querySelector(`[data-folder-id="${folder.id}"]`)?.classList.add("cs-hidden-working-folder");
+  }
 }
 
 function filterEntries(root, query) {

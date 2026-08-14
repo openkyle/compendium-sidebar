@@ -24,4 +24,7 @@
 .cs-compendium-mode .folder.collapsed > .subdirectory { display: none; }
 .cs-compendium-mode .folder-header { cursor: pointer; }
 .cs-loading, .cs-empty { padding: 1rem; text-align: center; list-style: none; opacity: .8; }
+.cs-working-copy { margin-left: auto; opacity: .65; font-size: .75em; }
+.cs-fallback-icon { width: 32px; margin-right: 6px; text-align: center; opacity: .7; }
+.cs-hidden-working-folder { display: none !important; }
 #compendium-sidebar-settings .notes { margin-bottom: .75rem; }
