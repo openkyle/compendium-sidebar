@@ -2,7 +2,7 @@
   "id": "compendium-sidebar",
   "title": "Compendium Sidebar",
   "description": "Adds a persistent World / Comp. switch to supported Foundry sidebar directories.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "authors": [{ "name": "openkyle" }],
   "compatibility": { "minimum": "11", "verified": "13" },
   "esmodules": ["scripts/compendium-sidebar.js"],

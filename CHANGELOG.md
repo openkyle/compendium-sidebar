@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 - 2026-08-14
+
+- Fixed system-theme heading rules causing large blank space before compendium folder names.
+- Added explicit, cumulative indentation for nested compendium folders and their contents.
+
 ## 1.1.0 - 2026-08-14
 
 - Compendium folder expansion state now persists per client and per pack.

@@ -197,7 +197,7 @@ function buildTree(pack, entries, tab) {
       const expanded = getFolderExpanded(pack.collection, folder.id);
       li.className = `directory-item folder flexcol${expanded ? "" : " collapsed"}`;
       li.dataset.folderId = folder.id;
-      li.innerHTML = `<header class="folder-header flexrow"><i class="fas fa-folder"></i><h3>${escapeHtml(folder.name)}</h3></header><ol class="subdirectory"></ol>`;
+      li.innerHTML = `<header class="folder-header flexrow"><i class="fas fa-folder folder-icon" aria-hidden="true"></i><span class="folder-name">${escapeHtml(folder.name)}</span></header><ol class="subdirectory"></ol>`;
       const child = li.querySelector(".subdirectory");
       appendLevel(child, folder.id);
       appendEntries(child, entriesByFolder.get(folder.id) ?? [], pack, tab, sort);

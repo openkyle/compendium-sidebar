@@ -23,6 +23,31 @@
 .cs-compendium-mode .cs-pack-entry > i { width: 32px; text-align: center; margin-right: 6px; }
 .cs-compendium-mode .folder.collapsed > .subdirectory { display: none; }
 .cs-compendium-mode .folder-header { cursor: pointer; }
+.cs-compendium-mode .folder-header .folder-icon {
+  flex: 0 0 20px;
+  margin: 0 6px 0 0;
+  text-align: center;
+}
+.cs-compendium-mode .folder-header .folder-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  text-align: left;
+  line-height: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-compendium-mode ol.subdirectory {
+  width: auto;
+  margin: 0;
+  padding: 0 0 0 18px;
+  border-left: 1px solid rgba(255, 255, 255, .14);
+  list-style: none;
+}
+.cs-compendium-mode ol.subdirectory > .directory-item { width: 100%; }
 .cs-loading, .cs-empty { padding: 1rem; text-align: center; list-style: none; opacity: .8; }
 .cs-working-copy { margin-left: auto; opacity: .65; font-size: .75em; }
 .cs-fallback-icon { width: 32px; margin-right: 6px; text-align: center; opacity: .7; }
