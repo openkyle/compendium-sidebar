@@ -3,15 +3,15 @@
   "title": "Compendium Sidebar",
   "description": "Adds a persistent World / Comp. switch to supported Foundry sidebar directories.",
   "version": "1.0.0",
-  "authors": [{ "name": "edgedoggo" }],
+  "authors": [{ "name": "openkyle" }],
   "compatibility": { "minimum": "11", "verified": "13" },
   "esmodules": ["scripts/compendium-sidebar.js"],
   "styles": ["styles/compendium-sidebar.css"],
   "languages": [
     { "lang": "en", "name": "English", "path": "lang/en.json" }
   ],
-  "manifest": "https://github.com/edgedoggo/compendium-sidebar/releases/latest/download/module.json",
-  "download": "https://github.com/edgedoggo/compendium-sidebar/releases/latest/download/compendium-sidebar.zip",
-  "url": "https://github.com/edgedoggo/compendium-sidebar",
+  "manifest": "https://github.com/openkyle/compendium-sidebar/releases/latest/download/module.json",
+  "download": "https://github.com/openkyle/compendium-sidebar/releases/latest/download/compendium-sidebar.zip",
+  "url": "https://github.com/openkyle/compendium-sidebar",
   "license": "LICENSE"
 }

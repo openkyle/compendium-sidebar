@@ -14,7 +14,7 @@ Compendium Sidebar adds a compact **World / Comp.** switch to Foundry VTT docume
 
 Paste this manifest URL into Foundry's **Install Module** dialog:
 
-`https://github.com/edgedoggo/compendium-sidebar/releases/latest/download/module.json`
+`https://github.com/openkyle/compendium-sidebar/releases/latest/download/module.json`
 
 Enable the module, then open **Game Settings → Configure Settings → Module Settings → Compendium Sidebar → Configure Sidebar Compendiums**. Choose a pack for each desired sidebar and save.
 
