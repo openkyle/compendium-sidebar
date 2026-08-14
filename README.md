@@ -9,6 +9,8 @@ Compendium Sidebar adds a compact **World / Comp.** switch to Foundry VTT docume
 - Preserves folders, search, click-to-open, drag-to-import, folder creation, and drag-to-folder organization.
 - Opens world-pack documents directly for normal GM editing; read-only package documents use persistent hidden working copies.
 - Stores configuration per world and the toggle state per client.
+- Remembers expanded and collapsed compendium folders per client.
+- Right-clicks transfer World documents or complete folder trees into the configured compendium while preserving their paths.
 - Compatible with Foundry VTT v11–v13.
 
 ## Installation
@@ -27,6 +29,7 @@ Enable the module, then open **Game Settings → Configure Settings → Module S
 - Changing or removing a configured pack returns affected users to the World view on their next render.
 - A GM opening a document from a locked world pack automatically unlocks that pack so the sheet can save normally.
 - System and module packs cannot be overwritten safely. Their documents open as editable world working copies, kept out of the normal World list by the module.
+- **Transfer to Compendium** copies rather than deletes the World source. Same-name collisions in the same destination folder prompt to duplicate, overwrite, or cancel.
 
 ## License
 

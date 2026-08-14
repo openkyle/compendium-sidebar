@@ -12,6 +12,7 @@ const DIRECTORIES = {
 };
 
 const indexCache = new Map();
+const FOLDER_STATE_KEY = "folder-states";
 
 function settingKey(tab) { return `pack-${tab}`; }
 function modeKey(tab) { return `mode-${tab}`; }
@@ -79,6 +80,9 @@ Hooks.once("init", () => {
       scope: "client", config: false, type: Boolean, default: false
     });
   }
+  game.settings.register(MODULE_ID, FOLDER_STATE_KEY, {
+    scope: "client", config: false, type: Object, default: {}
+  });
 });
 
 async function onRenderDirectory(app, html) {
@@ -190,7 +194,8 @@ function buildTree(pack, entries, tab) {
   const appendLevel = (target, parentId) => {
     for (const folder of (byParent.get(parentId) ?? []).sort(sort)) {
       const li = document.createElement("li");
-      li.className = "directory-item folder flexcol";
+      const expanded = getFolderExpanded(pack.collection, folder.id);
+      li.className = `directory-item folder flexcol${expanded ? "" : " collapsed"}`;
       li.dataset.folderId = folder.id;
       li.innerHTML = `<header class="folder-header flexrow"><i class="fas fa-folder"></i><h3>${escapeHtml(folder.name)}</h3></header><ol class="subdirectory"></ol>`;
       const child = li.querySelector(".subdirectory");
@@ -225,7 +230,11 @@ function appendEntries(target, entries, pack, tab, sort) {
 }
 
 function bindCompendiumInteractions(root, pack) {
-  root.querySelectorAll(".folder-header").forEach(header => header.addEventListener("click", () => header.parentElement.classList.toggle("collapsed")));
+  root.querySelectorAll(".folder-header").forEach(header => header.addEventListener("click", async () => {
+    const folder = header.parentElement;
+    folder.classList.toggle("collapsed");
+    await setFolderExpanded(pack.collection, folder.dataset.folderId, !folder.classList.contains("collapsed"));
+  }));
   root.querySelectorAll(".cs-pack-entry").forEach(entry => {
     entry.querySelector("img")?.addEventListener("error", event => {
       const icon = document.createElement("i");
@@ -252,6 +261,17 @@ function bindCompendiumInteractions(root, pack) {
   }, true);
   const search = root.querySelector('input[type="search"], input[name="search"]');
   search?.addEventListener("input", event => filterEntries(root, event.currentTarget.value), { capture: true });
+}
+
+function getFolderExpanded(packId, folderId) {
+  const states = game.settings.get(MODULE_ID, FOLDER_STATE_KEY) ?? {};
+  return states[`${packId}.${folderId}`] ?? true;
+}
+
+async function setFolderExpanded(packId, folderId, expanded) {
+  const states = foundry.utils.deepClone(game.settings.get(MODULE_ID, FOLDER_STATE_KEY) ?? {});
+  states[`${packId}.${folderId}`] = expanded;
+  await game.settings.set(MODULE_ID, FOLDER_STATE_KEY, states);
 }
 
 async function createCompendiumDocument(pack) {
@@ -375,3 +395,147 @@ function escapeAttribute(value = "") {
 Hooks.on("updateCompendium", pack => indexCache.delete(pack.collection));
 Hooks.on("createCompendium", pack => indexCache.delete(pack.collection));
 Hooks.on("deleteCompendium", pack => indexCache.delete(pack.collection));
+
+// Add the transfer action to stock World directory context menus. Foundry V11/V12
+// dispatch concrete hooks for entries and folders; V13 uses the ApplicationV2
+// hooks registered below.
+for (const [tab, config] of Object.entries(DIRECTORIES)) {
+  const className = config.documentName === "JournalEntry" ? "Journal" :
+    config.documentName === "RollTable" ? "RollTable" : config.documentName;
+  Hooks.on(`get${className}DirectoryEntryContext`, (_html, options) => {
+    options.push(transferEntryOption(tab));
+  });
+  Hooks.on(`get${className}DirectoryFolderContext`, (_html, options) => {
+    options.push(transferFolderOption(tab));
+  });
+}
+
+function transferEntryOption(tab) {
+  return {
+    name: "CS.TransferToCompendium",
+    icon: '<i class="fas fa-book"></i>',
+    condition: element => canTransfer(tab, element),
+    callback: element => transferWorldEntry(tab, contextElement(element))
+  };
+}
+
+function transferFolderOption(tab) {
+  return {
+    name: "CS.TransferFolderToCompendium",
+    icon: '<i class="fas fa-folder-open"></i>',
+    condition: element => canTransfer(tab, element),
+    callback: element => transferWorldFolder(tab, contextElement(element))
+  };
+}
+
+// ApplicationV2 context hooks used by Foundry V13+.
+for (const [tab, config] of Object.entries(DIRECTORIES)) {
+  Hooks.on(`get${config.documentName}ContextOptions`, (app, options) => {
+    if (app.tabName !== tab || options.some(option => option.name === "CS.TransferToCompendium")) return;
+    options.push(transferEntryOption(tab));
+  });
+}
+Hooks.on("getFolderContextOptions", (app, options) => {
+  const tab = app.tabName;
+  if (!(tab in DIRECTORIES) || options.some(option => option.name === "CS.TransferFolderToCompendium")) return;
+  options.push(transferFolderOption(tab));
+});
+
+function contextElement(element) {
+  return element instanceof HTMLElement ? element : element?.[0];
+}
+
+function canTransfer(tab, element) {
+  const node = contextElement(element);
+  return Boolean(game.user.isGM && game.settings.get(MODULE_ID, settingKey(tab)) && node && !node.closest(".cs-compendium-mode"));
+}
+
+async function transferWorldEntry(tab, element) {
+  const pack = game.packs.get(game.settings.get(MODULE_ID, settingKey(tab)));
+  const collection = game.collections.get(DIRECTORIES[tab].documentName);
+  const id = element?.dataset.documentId ?? element?.dataset.entryId;
+  const document = collection?.get(id);
+  if (!pack || !document || !await ensureWritablePack(pack)) return;
+  const destinationFolder = await ensureCompendiumFolderPath(pack, document.folder);
+  const result = await transferDocument(pack, document, destinationFolder?.id ?? null);
+  if (result) finishTransfer(pack, 1);
+}
+
+async function transferWorldFolder(tab, element) {
+  const pack = game.packs.get(game.settings.get(MODULE_ID, settingKey(tab)));
+  const sourceFolder = game.folders.get(element?.dataset.folderId);
+  const collection = game.collections.get(DIRECTORIES[tab].documentName);
+  if (!pack || !sourceFolder || !collection || !await ensureWritablePack(pack)) return;
+
+  const folders = [sourceFolder, ...sourceFolder.getSubfolders(true)];
+  let transferred = 0;
+  for (const folder of folders) {
+    const destinationFolder = await ensureCompendiumFolderPath(pack, folder);
+    const documents = collection.filter(document => document.folder?.id === folder.id || document.folder === folder.id);
+    for (const document of documents) {
+      const result = await transferDocument(pack, document, destinationFolder?.id ?? null);
+      if (result) transferred += 1;
+    }
+  }
+  finishTransfer(pack, transferred);
+}
+
+async function ensureCompendiumFolderPath(pack, sourceFolder) {
+  if (!sourceFolder) return null;
+  const chain = [...(sourceFolder.ancestors ?? [])].reverse().concat(sourceFolder);
+  let parentId = null;
+  for (const source of chain) {
+    const folders = Array.from(pack.folders?.contents ?? pack.folders ?? []);
+    let target = folders.find(folder => folder.name === source.name && (folder.folder?.id ?? folder.folder ?? null) === parentId);
+    if (!target) {
+      target = await Folder.create({ name: source.name, type: pack.documentName, folder: parentId }, { pack: pack.collection, renderSheet: false });
+    }
+    parentId = target.id;
+  }
+  return Array.from(pack.folders?.contents ?? pack.folders ?? []).find(folder => folder.id === parentId) ?? { id: parentId };
+}
+
+async function transferDocument(pack, source, folderId) {
+  await pack.getIndex({ fields: ["name", "folder"] });
+  const existing = Array.from(pack.index).find(entry => entry.name === source.name && (entry.folder?.id ?? entry.folder ?? null) === folderId);
+  let action = "duplicate";
+  if (existing) action = await collisionChoice(source.name);
+  if (action === "cancel") return false;
+
+  const data = source.toObject();
+  delete data._id;
+  delete data._stats;
+  data.folder = folderId;
+  if (action === "overwrite") {
+    const target = await pack.getDocument(existing._id);
+    await target.update(data, { diff: false, recursive: false });
+  } else {
+    await pack.documentClass.create(data, { pack: pack.collection, renderSheet: false });
+  }
+  indexCache.delete(pack.collection);
+  return true;
+}
+
+function collisionChoice(name) {
+  return new Promise(resolve => {
+    let resolved = false;
+    const finish = value => { resolved = true; resolve(value); };
+    new Dialog({
+      title: game.i18n.localize("CS.CollisionTitle"),
+      content: `<p>${game.i18n.format("CS.CollisionMessage", { name: escapeHtml(name) })}</p>`,
+      buttons: {
+        duplicate: { icon: '<i class="fas fa-copy"></i>', label: game.i18n.localize("CS.Duplicate"), callback: () => finish("duplicate") },
+        overwrite: { icon: '<i class="fas fa-rotate"></i>', label: game.i18n.localize("CS.Overwrite"), callback: () => finish("overwrite") },
+        cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("Cancel"), callback: () => finish("cancel") }
+      },
+      default: "cancel",
+      close: () => { if (!resolved) finish("cancel"); }
+    }).render(true);
+  });
+}
+
+function finishTransfer(pack, count) {
+  indexCache.delete(pack.collection);
+  ui.sidebar?.render?.(true);
+  ui.notifications.info(game.i18n.format("CS.TransferComplete", { count, pack: pack.title }));
+}

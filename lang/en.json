@@ -13,5 +13,12 @@
   "CS.LoadFailed": "The compendium could not be loaded.",
   "CS.PackUnavailable": "That compendium is no longer available. Returning to the World view.",
   "CS.ReadOnlyPack": "That pack is read-only. Its folders and source documents cannot be changed.",
-  "CS.WorkingCopyCreated": "Opened an editable working copy. The read-only source pack is unchanged."
+  "CS.WorkingCopyCreated": "Opened an editable working copy. The read-only source pack is unchanged.",
+  "CS.TransferToCompendium": "Transfer to Compendium",
+  "CS.TransferFolderToCompendium": "Transfer Folder to Compendium",
+  "CS.CollisionTitle": "Document Already Exists",
+  "CS.CollisionMessage": "A document named <strong>{name}</strong> already exists in the same compendium folder. What would you like to do?",
+  "CS.Duplicate": "Duplicate",
+  "CS.Overwrite": "Overwrite",
+  "CS.TransferComplete": "Transferred {count} document(s) to {pack}. World sources were retained."
 }

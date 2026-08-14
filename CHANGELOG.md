@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 - 2026-08-14
+
+- Compendium folder expansion state now persists per client and per pack.
+- Added World directory context actions to transfer individual documents or complete folder trees into the configured compendium.
+- Transfers reproduce the World folder path inside the destination pack.
+- Same-name collisions in the same folder offer Duplicate, Overwrite, or Cancel choices.
+- World sources are retained after transfer to avoid destructive, silent deletion.
+
 ## 1.0.1 - 2026-08-14
 
 - Fixed compendium folder discovery across Foundry collection implementations.
