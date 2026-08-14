@@ -13,6 +13,7 @@ const DIRECTORIES = {
 
 const indexCache = new Map();
 const FOLDER_STATE_KEY = "folder-states";
+const refreshTimers = new Map();
 
 function settingKey(tab) { return `pack-${tab}`; }
 function modeKey(tab) { return `mode-${tab}`; }
@@ -397,9 +398,44 @@ function escapeAttribute(value = "") {
   return escapeHtml(value).replaceAll('"', "&quot;");
 }
 
-Hooks.on("updateCompendium", pack => indexCache.delete(pack.collection));
-Hooks.on("createCompendium", pack => indexCache.delete(pack.collection));
-Hooks.on("deleteCompendium", pack => indexCache.delete(pack.collection));
+Hooks.on("updateCompendium", pack => refreshConfiguredPack(pack.collection));
+Hooks.on("createCompendium", pack => refreshConfiguredPack(pack.collection));
+Hooks.on("deleteCompendium", pack => refreshConfiguredPack(pack.collection));
+
+for (const config of Object.values(DIRECTORIES)) {
+  Hooks.on(`update${config.documentName}`, (document, changes) => refreshChangedDocument(document, changes));
+  Hooks.on(`create${config.documentName}`, document => refreshChangedDocument(document, { name: document.name }));
+  Hooks.on(`delete${config.documentName}`, document => refreshChangedDocument(document, { name: document.name }));
+}
+
+function refreshChangedDocument(document, changes) {
+  const exposedFieldChanged = ["name", "img", "thumb", "folder", "sort"].some(field => foundry.utils.hasProperty(changes, field));
+  if (!exposedFieldChanged) return;
+
+  if (document.pack) {
+    const packId = typeof document.pack === "string" ? document.pack : document.pack.collection;
+    refreshConfiguredPack(packId);
+    return;
+  }
+
+  const sourceUuid = document.getFlag?.(MODULE_ID, "sourceUuid");
+  if (!sourceUuid?.startsWith("Compendium.")) return;
+  const parts = sourceUuid.split(".");
+  refreshConfiguredPack(parts.slice(1, -1).join("."), { invalidate: false });
+}
+
+function refreshConfiguredPack(packId, { invalidate = true } = {}) {
+  if (invalidate) indexCache.delete(packId);
+  for (const tab of Object.keys(DIRECTORIES)) {
+    if (game.settings.get(MODULE_ID, settingKey(tab)) !== packId) continue;
+    if (!game.settings.get(MODULE_ID, modeKey(tab))) continue;
+    clearTimeout(refreshTimers.get(tab));
+    refreshTimers.set(tab, setTimeout(() => {
+      refreshTimers.delete(tab);
+      rerenderDirectory(tab);
+    }, 75));
+  }
+}
 
 // Add the transfer action to stock World directory context menus. Foundry V11/V12
 // dispatch concrete hooks for entries and folders; V13 uses the ApplicationV2

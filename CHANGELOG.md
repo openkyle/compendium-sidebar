@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.3 - 2026-08-14
+
+- Compendium sidebar rows now refresh when a document name or image changes.
+- Folder and sort changes refresh the affected pack tree as well.
+- Refreshes are scoped to the visible configured pack and briefly debounced to avoid redundant renders during saves.
+- Editable working-copy changes now update their corresponding compendium sidebar row.
+
 ## 1.1.2 - 2026-08-14
 
 - Fixed compendium folders immediately reopening because both Foundry and the module handled the same click.
