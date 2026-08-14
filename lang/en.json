@@ -17,8 +17,11 @@
   "CS.TransferToCompendium": "Transfer to Compendium",
   "CS.TransferFolderToCompendium": "Transfer Folder to Compendium",
   "CS.CollisionTitle": "Document Already Exists",
-  "CS.CollisionMessage": "A document named <strong>{name}</strong> already exists in the same compendium folder. What would you like to do?",
+  "CS.CollisionMessage": "A document named <strong>{name}</strong> already exists in the same destination folder. What would you like to do?",
   "CS.Duplicate": "Duplicate",
   "CS.Overwrite": "Overwrite",
-  "CS.TransferComplete": "Transferred {count} document(s) to {pack}. World sources were retained."
+  "CS.TransferComplete": "Transferred {count} document(s) to {pack}. World sources were retained.",
+  "CS.TransferToWorld": "Transfer to World",
+  "CS.TransferFolderToWorld": "Transfer Folder to World",
+  "CS.WorldTransferComplete": "Transferred {count} document(s) from {pack} to the World. Compendium sources were retained."
 }

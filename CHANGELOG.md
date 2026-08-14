@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.4 - 2026-08-14
+
+- Added working right-click context menus to custom Comp. document and folder rows.
+- Added Transfer to World and Transfer Folder to World actions.
+- Reverse transfers reproduce complete compendium folder paths in the World.
+- Reverse transfers use the same Duplicate, Overwrite, or Cancel collision handling.
+- Compendium sources are retained after transfer.
+
 ## 1.1.3 - 2026-08-14
 
 - Compendium sidebar rows now refresh when a document name or image changes.

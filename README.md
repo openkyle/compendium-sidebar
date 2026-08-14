@@ -11,6 +11,7 @@ Compendium Sidebar adds a compact **World / Comp.** switch to Foundry VTT docume
 - Stores configuration per world and the toggle state per client.
 - Remembers expanded and collapsed compendium folders per client.
 - Right-clicks transfer World documents or complete folder trees into the configured compendium while preserving their paths.
+- Right-clicks in Comp. view transfer documents or complete folder trees back into the World with the same path and collision choices.
 - Compatible with Foundry VTT v11–v13.
 
 ## Installation

@@ -267,6 +267,91 @@ function bindCompendiumInteractions(root, pack) {
   }, true);
   const search = root.querySelector('input[type="search"], input[name="search"]');
   search?.addEventListener("input", event => filterEntries(root, event.currentTarget.value), { capture: true });
+  bindTransferToWorldMenus(root, pack);
+}
+
+function bindTransferToWorldMenus(root, pack) {
+  const ContextMenuClass = foundry.applications?.ux?.ContextMenu ?? globalThis.ContextMenu;
+  if (!ContextMenuClass || !game.user.isGM) return;
+  const documentOption = [{
+    name: "CS.TransferToWorld",
+    icon: '<i class="fas fa-globe"></i>',
+    callback: element => transferCompendiumEntryToWorld(pack, contextElement(element))
+  }];
+  const folderOption = [{
+    name: "CS.TransferFolderToWorld",
+    icon: '<i class="fas fa-folder-open"></i>',
+    callback: element => transferCompendiumFolderToWorld(pack, contextElement(element)?.closest("li.folder"))
+  }];
+  new ContextMenuClass(root, ".cs-pack-entry", documentOption, { jQuery: false });
+  new ContextMenuClass(root, "li.folder > .folder-header", folderOption, { jQuery: false });
+}
+
+async function transferCompendiumEntryToWorld(pack, element) {
+  if (!element) return;
+  const source = element.dataset.workingId
+    ? getWorldCollection(pack.documentName)?.get(element.dataset.workingId)
+    : await pack.getDocument(element.dataset.entryId);
+  if (!source) return;
+  const folderRef = (await pack.getIndex()).get(element.dataset.entryId)?.folder;
+  const sourceFolder = pack.folders?.get?.(folderRef?.id ?? folderRef);
+  const destinationFolder = await ensureWorldFolderPath(pack, sourceFolder);
+  const result = await transferDocumentToWorld(pack, source, destinationFolder?.id ?? null);
+  if (result) finishWorldTransfer(pack, 1);
+}
+
+async function transferCompendiumFolderToWorld(pack, element) {
+  const sourceFolder = pack.folders?.get?.(element?.dataset.folderId);
+  if (!sourceFolder) return;
+  const allFolders = Array.from(pack.folders?.contents ?? pack.folders ?? []);
+  const folders = [sourceFolder, ...allFolders.filter(folder => (folder.ancestors ?? []).some(parent => parent.id === sourceFolder.id))];
+  const index = Array.from(await pack.getIndex({ fields: ["name", "folder"] }));
+  let transferred = 0;
+  for (const folder of folders) {
+    const destinationFolder = await ensureWorldFolderPath(pack, folder);
+    const entries = index.filter(entry => (entry.folder?.id ?? entry.folder) === folder.id);
+    for (const entry of entries) {
+      const workingCopy = findWorkingCopy(Object.keys(DIRECTORIES).find(tab => DIRECTORIES[tab].documentName === pack.documentName), pack, entry._id);
+      const source = workingCopy ?? await pack.getDocument(entry._id);
+      if (await transferDocumentToWorld(pack, source, destinationFolder.id)) transferred += 1;
+    }
+  }
+  finishWorldTransfer(pack, transferred);
+}
+
+async function ensureWorldFolderPath(pack, sourceFolder) {
+  if (!sourceFolder) return null;
+  const chain = [...(sourceFolder.ancestors ?? [])].reverse().concat(sourceFolder);
+  let parentId = null;
+  for (const source of chain) {
+    let target = game.folders.find(folder => folder.type === pack.documentName && folder.name === source.name && (folder.folder?.id ?? folder.folder ?? null) === parentId);
+    if (!target) {
+      target = await Folder.create({ name: source.name, type: pack.documentName, folder: parentId }, { renderSheet: false });
+    }
+    parentId = target.id;
+  }
+  return game.folders.get(parentId);
+}
+
+async function transferDocumentToWorld(pack, source, folderId) {
+  const collection = getWorldCollection(pack.documentName);
+  const existing = collection?.find(document => document.name === source.name && (document.folder?.id ?? document.folder ?? null) === folderId && !document.getFlag(MODULE_ID, "sourceUuid"));
+  let action = existing ? await collisionChoice(source.name) : "duplicate";
+  if (action === "cancel") return false;
+
+  const data = source.toObject();
+  delete data._id;
+  delete data._stats;
+  data.folder = folderId;
+  if (data.flags?.[MODULE_ID]?.sourceUuid) delete data.flags[MODULE_ID].sourceUuid;
+  if (action === "overwrite") await existing.update(data, { diff: false, recursive: false });
+  else await CONFIG[pack.documentName].documentClass.create(data, { renderSheet: false });
+  return true;
+}
+
+function finishWorldTransfer(pack, count) {
+  ui.sidebar?.render?.(true);
+  ui.notifications.info(game.i18n.format("CS.WorldTransferComplete", { count, pack: pack.title }));
 }
 
 function getFolderExpanded(packId, folderId) {
