@@ -1,0 +1,19 @@
+<form autocomplete="off">
+  <p class="notes">{{localize "CS.SettingsIntro"}}</p>
+  {{#each directories}}
+  <div class="form-group">
+    <label>{{label}}</label>
+    <div class="form-fields">
+      <select name="{{tab}}">
+        <option value="">{{localize "CS.Disabled"}}</option>
+        {{#each packs}}
+        <option value="{{value}}" {{#if (eq value ../selected)}}selected{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+  {{/each}}
+  <footer class="sheet-footer flexrow">
+    <button type="submit"><i class="fas fa-save"></i> {{localize "Save Changes"}}</button>
+  </footer>
+</form>

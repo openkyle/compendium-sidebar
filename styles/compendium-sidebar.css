@@ -1,0 +1,27 @@
+.cs-mode-switch {
+  display: inline-flex;
+  flex: 1 1 100%;
+  min-height: 28px;
+  margin-top: 4px;
+  border: 1px solid var(--color-border-light-primary, #7a7971);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.cs-mode-switch button {
+  flex: 1;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: rgba(0, 0, 0, .22);
+  color: var(--color-text-light-highlight, #f0f0e0);
+  line-height: 26px;
+}
+.cs-mode-switch button + button { border-left: 1px solid var(--color-border-light-primary, #7a7971); }
+.cs-mode-switch button.active { background: var(--color-warm-2, #9f6b3f); color: #fff; box-shadow: inset 0 0 8px rgba(0, 0, 0, .35); }
+.cs-compendium-mode .cs-pack-entry { cursor: pointer; }
+.cs-compendium-mode .cs-pack-entry .thumbnail { width: 32px; height: 32px; object-fit: cover; margin-right: 6px; border: 0; }
+.cs-compendium-mode .cs-pack-entry > i { width: 32px; text-align: center; margin-right: 6px; }
+.cs-compendium-mode .folder.collapsed > .subdirectory { display: none; }
+.cs-compendium-mode .folder-header { cursor: pointer; }
+.cs-loading, .cs-empty { padding: 1rem; text-align: center; list-style: none; opacity: .8; }
+#compendium-sidebar-settings .notes { margin-bottom: .75rem; }

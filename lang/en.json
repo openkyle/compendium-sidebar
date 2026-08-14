@@ -1,0 +1,15 @@
+{
+  "CS.SettingsTitle": "Compendium Sidebar Configuration",
+  "CS.SettingsName": "Compendium Sidebar",
+  "CS.SettingsButton": "Configure Sidebar Compendiums",
+  "CS.SettingsHint": "Choose the compendium available from each document sidebar.",
+  "CS.SettingsIntro": "Select one visible compendium for each sidebar. Leaving a row disabled adds no switch to that sidebar.",
+  "CS.Disabled": "Disabled",
+  "CS.World": "World",
+  "CS.Compendium": "Comp.",
+  "CS.ToggleLabel": "Sidebar source",
+  "CS.Loading": "Loading compendium…",
+  "CS.Empty": "This compendium is empty.",
+  "CS.LoadFailed": "The compendium could not be loaded.",
+  "CS.PackUnavailable": "That compendium is no longer available. Returning to the World view."
+}
