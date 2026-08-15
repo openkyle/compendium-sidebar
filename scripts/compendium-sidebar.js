@@ -196,7 +196,7 @@ function buildTree(pack, entries, tab) {
     for (const folder of (byParent.get(parentId) ?? []).sort(sort)) {
       const li = document.createElement("li");
       const expanded = getFolderExpanded(pack.collection, folder.id);
-      li.className = `directory-item folder flexcol${expanded ? "" : " collapsed"}`;
+      li.className = `directory-item cs-pack-folder flexcol${expanded ? "" : " collapsed"}`;
       li.dataset.folderId = folder.id;
       li.innerHTML = `<header class="folder-header flexrow"><i class="fas fa-chevron-down folder-toggle" aria-hidden="true"></i><i class="fas ${expanded ? "fa-folder-open" : "fa-folder"} folder-icon" aria-hidden="true"></i><span class="folder-name">${escapeHtml(folder.name)}</span></header><ol class="subdirectory"></ol>`;
       const child = li.querySelector(".subdirectory");
@@ -218,14 +218,18 @@ function appendEntries(target, entries, pack, tab, sort) {
   for (const entry of entries.sort(sort)) {
     const workingCopy = findWorkingCopy(tab, pack, entry._id);
     const li = document.createElement("li");
-    li.className = "directory-item document flexrow cs-pack-entry";
+    li.className = `directory-item flexrow cs-pack-entry${pack.documentName === "Scene" ? " cs-scene-entry" : ""}`;
     li.dataset.entryId = entry._id;
     li.dataset.uuid = `Compendium.${pack.collection}.${entry._id}`;
     if (workingCopy) li.dataset.workingId = workingCopy.id;
     li.draggable = true;
-    const image = workingCopy?.img ?? entry.img ?? entry.thumb;
+    const image = workingCopy?.thumb ?? workingCopy?.img ?? (pack.documentName === "Scene" ? entry.thumb ?? entry.img : entry.img ?? entry.thumb);
     const name = workingCopy?.name ?? entry.name;
-    li.innerHTML = `${image ? `<img class="thumbnail" src="${escapeAttribute(image)}" alt="">` : `<i class="fas fa-file"></i>`}<a class="entry-name">${escapeHtml(name)}</a>${workingCopy ? '<i class="fas fa-pen cs-working-copy" title="Editable working copy"></i>' : ""}`;
+    if (pack.documentName === "Scene") {
+      li.innerHTML = `${image ? `<img class="thumbnail" src="${escapeAttribute(image)}" alt="">` : ""}<a class="entry-name">${escapeHtml(name)}</a>${workingCopy ? '<i class="fas fa-pen cs-working-copy" title="Editable working copy"></i>' : ""}`;
+    } else {
+      li.innerHTML = `${image ? `<img class="thumbnail" src="${escapeAttribute(image)}" alt="">` : `<i class="fas fa-file"></i>`}<a class="entry-name">${escapeHtml(name)}</a>${workingCopy ? '<i class="fas fa-pen cs-working-copy" title="Editable working copy"></i>' : ""}`;
+    }
     target.append(li);
   }
 }
@@ -252,7 +256,7 @@ function bindCompendiumInteractions(root, pack) {
       event.dataTransfer.setData("text/plain", JSON.stringify({ type: pack.documentName, uuid: entry.dataset.uuid }));
     });
   });
-  root.querySelectorAll("li.folder").forEach(folder => {
+  root.querySelectorAll("li.cs-pack-folder").forEach(folder => {
     folder.addEventListener("dragover", event => event.preventDefault());
     folder.addEventListener("drop", async event => moveEntryToFolder(event, pack, folder.dataset.folderId));
   });
@@ -281,10 +285,10 @@ function bindTransferToWorldMenus(root, pack) {
   const folderOption = [{
     name: "CS.TransferFolderToWorld",
     icon: '<i class="fas fa-folder-open"></i>',
-    callback: element => transferCompendiumFolderToWorld(pack, contextElement(element)?.closest("li.folder"))
+    callback: element => transferCompendiumFolderToWorld(pack, contextElement(element)?.closest("li.cs-pack-folder"))
   }];
   new ContextMenuClass(root, ".cs-pack-entry", documentOption, { jQuery: false });
-  new ContextMenuClass(root, "li.folder > .folder-header", folderOption, { jQuery: false });
+  new ContextMenuClass(root, "li.cs-pack-folder > .folder-header", folderOption, { jQuery: false });
 }
 
 async function transferCompendiumEntryToWorld(pack, element) {
@@ -466,7 +470,7 @@ function filterEntries(root, query) {
   root.querySelectorAll(".cs-pack-entry").forEach(entry => {
     entry.hidden = needle && !entry.textContent.toLocaleLowerCase().includes(needle);
   });
-  root.querySelectorAll("li.folder").forEach(folder => {
+  root.querySelectorAll("li.cs-pack-folder").forEach(folder => {
     folder.hidden = needle && !folder.querySelector(".cs-pack-entry:not([hidden])");
   });
 }

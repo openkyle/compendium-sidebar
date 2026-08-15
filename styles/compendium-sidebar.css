@@ -29,7 +29,7 @@
   border: 0;
 }
 .cs-compendium-mode .cs-pack-entry > i { width: 32px; text-align: center; margin-right: 6px; }
-.cs-compendium-mode .folder.collapsed > .subdirectory { display: none; }
+.cs-compendium-mode .cs-pack-folder.collapsed > .subdirectory { display: none; }
 .cs-compendium-mode .folder-header { cursor: pointer; }
 .cs-compendium-mode .folder-header .folder-toggle {
   flex: 0 0 12px;
@@ -38,7 +38,7 @@
   font-size: .7em;
   transition: transform 120ms ease;
 }
-.cs-compendium-mode .folder.collapsed > .folder-header .folder-toggle { transform: rotate(-90deg); }
+.cs-compendium-mode .cs-pack-folder.collapsed > .folder-header .folder-toggle { transform: rotate(-90deg); }
 .cs-compendium-mode .folder-header .folder-icon {
   flex: 0 0 20px;
   margin: 0 6px 0 0;
@@ -64,6 +64,37 @@
   list-style: none;
 }
 .cs-compendium-mode ol.subdirectory > .directory-item { width: 100%; }
+.cs-compendium-mode .cs-scene-entry {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 92px;
+  padding: 0;
+  overflow: hidden;
+}
+.cs-compendium-mode .cs-scene-entry .thumbnail {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 92px;
+  max-height: 190px;
+  margin: 0;
+  object-fit: cover !important;
+  border: 0;
+}
+.cs-compendium-mode .cs-scene-entry .entry-name {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  color: #fff;
+  font-size: 1.35em;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 2px 4px #000, 0 0 6px #000;
+}
 .cs-loading, .cs-empty { padding: 1rem; text-align: center; list-style: none; opacity: .8; }
 .cs-working-copy { margin-left: auto; opacity: .65; font-size: .75em; }
 .cs-fallback-icon { width: 32px; margin-right: 6px; text-align: center; opacity: .7; }

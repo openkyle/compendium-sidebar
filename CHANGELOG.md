@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.5 - 2026-08-15
+
+- Isolated custom Comp. rows from Foundry's stock `.document` and `.folder` context-menu selectors.
+- Fixed Scene and Folder right-click errors caused by core attempting to resolve custom rows as World documents.
+- Added Foundry-style wide Scene cards with centered overlay titles.
+- Other document types retain the compact uncropped thumbnail layout.
+
 ## 1.1.4 - 2026-08-14
 
 - Added working right-click context menus to custom Comp. document and folder rows.
