@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.6 - 2026-08-17
+
+- Reworked the Comp. folder tree to closely match Foundry's stock directory presentation.
+- Closed folders use black shading; open folders use grey shading and an open-folder glyph.
+- Removed the redundant disclosure chevron so the folder glyph itself communicates state.
+- Added compact nested offsets and guide borders without excessive horizontal drift.
+- Added bordered document rows with flush, square, uncropped thumbnails.
+- Explicit flex overrides prevent game-system themes from wrapping folder names below their icons.
+
 ## 1.1.5 - 2026-08-15
 
 - Isolated custom Comp. rows from Foundry's stock `.document` and `.folder` context-menu selectors.
