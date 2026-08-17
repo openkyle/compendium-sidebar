@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.8 - 2026-08-17
+
+- Fixed Comp. context-menu binding on Foundry v11/v12 by supplying the jQuery container expected by ApplicationV1.
+- Retained native HTMLElement context-menu binding for Foundry v13+.
+- Normalized callback targets through the existing cross-version element adapter.
+
 ## 1.1.7 - 2026-08-17
 
 - Reduced Comp. folder headers to a compact fixed height.

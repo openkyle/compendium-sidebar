@@ -277,6 +277,10 @@ function bindCompendiumInteractions(root, pack) {
 function bindTransferToWorldMenus(root, pack) {
   const ContextMenuClass = foundry.applications?.ux?.ContextMenu ?? globalThis.ContextMenu;
   if (!ContextMenuClass || !game.user.isGM) return;
+  const generation = Number(game.release?.generation ?? String(game.version ?? "11").split(".")[0]);
+  const useJQuery = generation < 13 && typeof globalThis.$ === "function";
+  const container = useJQuery ? globalThis.$(root) : root;
+  const menuOptions = generation >= 13 ? { jQuery: false } : {};
   const documentOption = [{
     name: "CS.TransferToWorld",
     icon: '<i class="fas fa-globe"></i>',
@@ -287,8 +291,8 @@ function bindTransferToWorldMenus(root, pack) {
     icon: '<i class="fas fa-folder-open"></i>',
     callback: element => transferCompendiumFolderToWorld(pack, contextElement(element)?.closest("li.cs-pack-folder"))
   }];
-  new ContextMenuClass(root, ".cs-pack-entry", documentOption, { jQuery: false });
-  new ContextMenuClass(root, "li.cs-pack-folder > .folder-header", folderOption, { jQuery: false });
+  new ContextMenuClass(container, ".cs-pack-entry", documentOption, menuOptions);
+  new ContextMenuClass(container, "li.cs-pack-folder > .folder-header", folderOption, menuOptions);
 }
 
 async function transferCompendiumEntryToWorld(pack, element) {
