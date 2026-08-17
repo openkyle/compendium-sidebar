@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.7 - 2026-08-17
+
+- Reduced Comp. folder headers to a compact fixed height.
+- Reduced folder glyph and label sizes while preserving open/closed styling.
+- Reduced standard document rows and thumbnails to 50px/48px.
+- Reduced Scene card height and overlay-title size.
+- Added targeted sizing overrides to prevent game-system themes from inflating custom rows.
+
 ## 1.1.6 - 2026-08-17
 
 - Reworked the Comp. folder tree to closely match Foundry's stock directory presentation.
